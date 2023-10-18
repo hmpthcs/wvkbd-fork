@@ -3,6 +3,7 @@
 #include "proto/xdg-shell-client-protocol.h"
 #include "proto/fractional-scale-v1-client-protocol.h"
 #include "proto/viewporter-client-protocol.h"
+#include "proto/input-method-unstable-v2-client-protocol.h"
 #include <errno.h>
 #include <linux/input-event-codes.h>
 #include <stdio.h>
@@ -39,6 +40,8 @@ static struct xdg_surface *popup_xdg_surface;
 static struct xdg_popup *popup_xdg_popup;
 static struct xdg_positioner *popup_xdg_positioner;
 static struct zwp_virtual_keyboard_manager_v1 *vkbd_mgr;
+static struct zwp_input_method_manager_v2 *input_method_manager;
+static struct zwp_input_method_v2 *input_method;
 static struct wp_fractional_scale_v1 *wfs_draw_surf;
 static struct wp_fractional_scale_manager_v1 *wfs_mgr;
 static struct wp_viewport *draw_surf_viewport, *popup_draw_surf_viewport;
@@ -126,6 +129,30 @@ static void layer_surface_closed(void *data,
                                  struct zwlr_layer_surface_v1 *surface);
 static void flip_landscape();
 
+
+static void unavailable_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
+    fprintf(stderr, "Unavailable request\n");
+}
+
+static void done_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
+    fprintf(stderr, "done request\n");
+}
+
+static void content_type_request(void *data, struct zwp_input_method_v2 *zwp_input_method, uint32_t hint, uint32_t purpose){
+    fprintf(stderr, "content type request\n");
+}
+
+static void text_change_cause_request(void *data, struct zwp_input_method_v2 *zwp_input_method, uint32_t cause){
+    fprintf(stderr, "text change cause request\n");
+}
+
+static void surrounding_text_request(void *data, struct zwp_input_method_v2 *zwp_input_method, const char *text, uint32_t cursor, uint32_t anchor){
+    fprintf(stderr, "surrounding text request\n");
+}
+
+static void show_request(void *data, struct zwp_input_method_v2 *zwp_input_method);
+static void hide_request(void *data, struct zwp_input_method_v2 *zwp_input_method);
+
 /* event handlers */
 static const struct wl_pointer_listener pointer_listener = {
     .enter = wl_pointer_enter,
@@ -162,6 +189,16 @@ static const struct wl_registry_listener registry_listener = {
 static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
     .configure = layer_surface_configure,
     .closed = layer_surface_closed,
+};
+
+static const struct zwp_input_method_v2_listener input_method_listener = {
+    .activate = show_request,
+    .deactivate = hide_request,
+    .surrounding_text = surrounding_text_request,
+    .text_change_cause = text_change_cause_request,
+    .content_type = content_type_request,
+    .done = done_request,
+    .unavailable = unavailable_request
 };
 
 /* configuration, allows nested code to access above variables */
@@ -451,6 +488,9 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
                       zwp_virtual_keyboard_manager_v1_interface.name) == 0) {
         vkbd_mgr = wl_registry_bind(
             registry, name, &zwp_virtual_keyboard_manager_v1_interface, 1);
+    } else if (strcmp(interface, zwp_input_method_manager_v2_interface.name) == 0) {
+        input_method_manager =
+            wl_registry_bind(registry, name, &zwp_input_method_manager_v2_interface, 1);
     }
 }
 
@@ -707,6 +747,16 @@ show()
     wl_surface_commit(draw_surf.surf);
 }
 
+static void show_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
+    fprintf(stderr, "show request\n");
+    show();
+}
+
+static void hide_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
+    fprintf(stderr, "hide request\n");
+    hide();
+}
+
 void
 toggle_visibility()
 {
@@ -947,6 +997,9 @@ main(int argc, char **argv)
     if (vkbd_mgr == NULL) {
         die("virtual_keyboard_manager not available\n");
     }
+    if (input_method_manager == NULL) {
+        die("input_method_manager is not available\n");
+    }
 
     empty_region = wl_compositor_create_region(compositor);
     popup_xdg_positioner = xdg_wm_base_create_positioner(wm_base);
@@ -959,6 +1012,12 @@ main(int argc, char **argv)
 
     kbd_init(&keyboard, (struct layout *)&layouts, layer_names_list,
              landscape_layer_names_list);
+
+    input_method = zwp_input_method_manager_v2_get_input_method(input_method_manager, seat);
+    if (input_method == NULL) {
+        fprintf(stderr, "input_method is NULL, that's not good\n");
+    }
+    zwp_input_method_v2_add_listener(input_method, &input_method_listener, NULL);
 
     draw_ctx.font_description =
         pango_font_description_from_string(fc_font_pattern);

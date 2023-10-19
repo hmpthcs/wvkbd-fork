@@ -130,28 +130,24 @@ static void layer_surface_closed(void *data,
 static void flip_landscape();
 
 
-static void unavailable_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
-    fprintf(stderr, "Unavailable request\n");
+static void input_method_unavailable(void *data, struct zwp_input_method_v2 *zwp_input_method){}
+
+static void input_method_done(void *data, struct zwp_input_method_v2 *zwp_input_method){}
+
+static void input_method_content_type(void *data, struct zwp_input_method_v2 *zwp_input_method,
+                                      uint32_t hint, uint32_t purpose){
+    // TODO: save current layout
+    fprintf(stderr, "content type request. hint: %i, purpose: %i\n", hint, purpose);
 }
 
-static void done_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
-    fprintf(stderr, "done request\n");
-}
+static void input_method_text_change_cause(void *data, struct zwp_input_method_v2 *zwp_input_method,
+                                           uint32_t cause){}
 
-static void content_type_request(void *data, struct zwp_input_method_v2 *zwp_input_method, uint32_t hint, uint32_t purpose){
-    fprintf(stderr, "content type request\n");
-}
+static void input_method_surrounding_text(void *data, struct zwp_input_method_v2 *zwp_input_method,
+                                          const char *text, uint32_t cursor, uint32_t anchor){}
 
-static void text_change_cause_request(void *data, struct zwp_input_method_v2 *zwp_input_method, uint32_t cause){
-    fprintf(stderr, "text change cause request\n");
-}
-
-static void surrounding_text_request(void *data, struct zwp_input_method_v2 *zwp_input_method, const char *text, uint32_t cursor, uint32_t anchor){
-    fprintf(stderr, "surrounding text request\n");
-}
-
-static void show_request(void *data, struct zwp_input_method_v2 *zwp_input_method);
-static void hide_request(void *data, struct zwp_input_method_v2 *zwp_input_method);
+static void input_method_activate(void *data, struct zwp_input_method_v2 *zwp_input_method);
+static void input_method_deactivate(void *data, struct zwp_input_method_v2 *zwp_input_method);
 
 /* event handlers */
 static const struct wl_pointer_listener pointer_listener = {
@@ -192,13 +188,13 @@ static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
 };
 
 static const struct zwp_input_method_v2_listener input_method_listener = {
-    .activate = show_request,
-    .deactivate = hide_request,
-    .surrounding_text = surrounding_text_request,
-    .text_change_cause = text_change_cause_request,
-    .content_type = content_type_request,
-    .done = done_request,
-    .unavailable = unavailable_request
+    .activate = input_method_activate,
+    .deactivate = input_method_deactivate,
+    .surrounding_text = input_method_surrounding_text,
+    .text_change_cause = input_method_text_change_cause,
+    .content_type = input_method_content_type,
+    .done = input_method_done,
+    .unavailable = input_method_unavailable
 };
 
 /* configuration, allows nested code to access above variables */
@@ -747,13 +743,12 @@ show()
     wl_surface_commit(draw_surf.surf);
 }
 
-static void show_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
-    fprintf(stderr, "show request\n");
+static void input_method_activate(void *data, struct zwp_input_method_v2 *zwp_input_method){
     show();
 }
 
-static void hide_request(void *data, struct zwp_input_method_v2 *zwp_input_method){
-    fprintf(stderr, "hide request\n");
+static void input_method_deactivate(void *data, struct zwp_input_method_v2 *zwp_input_method){
+    // TODO: restore previous layout
     hide();
 }
 

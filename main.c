@@ -25,6 +25,9 @@
     fprintf(stderr, __VA_ARGS__);                                              \
     exit(1)
 
+/* array size */
+#define countof(x) (sizeof(x) / sizeof(*x))
+
 /* client state */
 static const char *namespace = "wlroots";
 static struct wl_display *display;
@@ -115,6 +118,8 @@ static void seat_handle_name(void *data, struct wl_seat *wl_seat,
 
 static void wl_surface_enter(void *data, struct wl_surface *wl_surface,
                              struct wl_output *wl_output);
+static void wl_surface_leave(void *data, struct wl_surface *wl_surface,
+                             struct wl_output *wl_output);
 
 static void handle_global(void *data, struct wl_registry *registry,
                           uint32_t name, const char *interface,
@@ -175,6 +180,7 @@ static const struct wl_seat_listener seat_listener = {
 
 static const struct wl_surface_listener surface_listener = {
     .enter = wl_surface_enter,
+    .leave = wl_surface_leave,
 };
 
 static const struct wl_registry_listener registry_listener = {
@@ -372,17 +378,26 @@ void
 wl_surface_enter(void *data, struct wl_surface *wl_surface,
                  struct wl_output *wl_output)
 {
-    for (int i = 0; i < WL_OUTPUTS_LIMIT; i += 1) {
+    struct Output *old_output = current_output;
+    for (int i = 0; i < wl_outputs_size; i += 1) {
         if (wl_outputs[i].data == wl_output) {
             current_output = &wl_outputs[i];
             break;
         }
     }
+    if (current_output == old_output) {
+        return;
+    }
 
     keyboard.preferred_scale = current_output->scale;
-
     flip_landscape();
 }
+
+void
+wl_surface_leave(void *data, struct wl_surface *wl_surface,
+                 struct wl_output *wl_output) {
+}
+
 
 static void
 display_handle_geometry(void *data, struct wl_output *wl_output, int x, int y,
@@ -454,7 +469,7 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
             wl_registry_bind(registry, name, &wl_compositor_interface, 3);
     } else if (strcmp(interface, wl_shm_interface.name) == 0) {
         draw_ctx.shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
-    } else if (strcmp(interface, "wl_output") == 0) {
+    } else if (strcmp(interface, wl_output_interface.name) == 0) {
         if (wl_outputs_size < WL_OUTPUTS_LIMIT) {
             struct Output *output = &wl_outputs[wl_outputs_size];
             output->data =
@@ -493,10 +508,10 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
 void
 handle_global_remove(void *data, struct wl_registry *registry, uint32_t name)
 {
-    for (int i = 0; i < WL_OUTPUTS_LIMIT; i += 1) {
+    for (int i = 0; i < wl_outputs_size; i += 1) {
         if (wl_outputs[i].name == name) {
             wl_output_destroy(wl_outputs[i].data);
-            for (; i < WL_OUTPUTS_LIMIT - 1; i += 1) {
+            for (; i < wl_outputs_size - 1; i += 1) {
                 wl_outputs[i] = wl_outputs[i + 1];
             }
             wl_outputs_size -= 1;
@@ -521,9 +536,6 @@ static void
 xdg_popup_configure(void *data, struct xdg_popup *xdg_popup, int32_t x,
                     int32_t y, int32_t width, int32_t height)
 {
-    kbd_resize(&keyboard, layouts, NumLayouts);
-
-    drwsurf_flip(&draw_surf);
 }
 
 static void
@@ -552,7 +564,18 @@ static const struct wp_fractional_scale_v1_listener
 void
 flip_landscape()
 {
-    keyboard.landscape = current_output->w > current_output->h;
+    bool previous_landscape = keyboard.landscape;
+
+    if (current_output) {
+        keyboard.landscape = current_output->w > current_output->h;
+    } else if (wl_outputs_size) {
+        for (int i = 0; i < wl_outputs_size; i += 1) {
+            if (wl_outputs[i].w > wl_outputs[i].h) {
+                keyboard.landscape = true;
+                break;
+            }
+        }
+    }
 
     enum layout_id layer;
     if (keyboard.landscape) {
@@ -635,9 +658,13 @@ layer_surface_configure(void *data, struct zwlr_layer_surface_v1 *surface,
         }
 
         wl_surface_commit(popup_draw_surf.surf);
-    }
 
-    zwlr_layer_surface_v1_ack_configure(surface, serial);
+        zwlr_layer_surface_v1_ack_configure(surface, serial);
+        kbd_resize(&keyboard, layouts, NumLayouts);
+        drwsurf_flip(&draw_surf);
+    } else {
+        zwlr_layer_surface_v1_ack_configure(surface, serial);
+    }
 }
 
 void
@@ -705,6 +732,15 @@ hide()
         return;
     }
 
+    if(wfs_draw_surf) {
+        wp_fractional_scale_v1_destroy(wfs_draw_surf);
+        wfs_draw_surf = NULL;
+    }
+    if(draw_surf_viewport) {
+        wp_viewport_destroy(draw_surf_viewport);
+        draw_surf_viewport = NULL;
+    }
+
     zwlr_layer_surface_v1_destroy(layer_surface);
     wl_surface_destroy(draw_surf.surf);
     layer_surface = NULL;
@@ -720,6 +756,8 @@ show()
 
     wl_display_sync(display);
 
+    flip_landscape();
+
     draw_surf.surf = wl_compositor_create_surface(compositor);
     wl_surface_add_listener(draw_surf.surf, &surface_listener, NULL);
     if (wfs_mgr && viewporter) {
@@ -731,8 +769,12 @@ show()
             wp_viewporter_get_viewport(viewporter, draw_surf.surf);
     }
 
+    struct wl_output *current_output_data = NULL;
+    if (current_output)
+        current_output_data = current_output->data;
+
     layer_surface = zwlr_layer_shell_v1_get_layer_surface(
-        layer_shell, draw_surf.surf, NULL, layer, namespace);
+        layer_shell, draw_surf.surf, current_output_data, layer, namespace);
 
     zwlr_layer_surface_v1_set_size(layer_surface, 0, height);
     zwlr_layer_surface_v1_set_anchor(layer_surface, anchor);
@@ -792,9 +834,9 @@ main(int argc, char **argv)
 {
     /* parse command line arguments */
     char *layer_names_list = NULL, *landscape_layer_names_list = NULL;
-    const char *fc_font_pattern = NULL;
-    height = normal_height = KBD_PIXEL_HEIGHT;
-    landscape_height = KBD_PIXEL_LANDSCAPE_HEIGHT;
+    char *fc_font_pattern = NULL;
+    height = landscape_height = KBD_PIXEL_LANDSCAPE_HEIGHT;
+    normal_height = KBD_PIXEL_HEIGHT;
 
     char *tmp;
     if ((tmp = getenv("WVKBD_LAYERS")))
@@ -810,6 +852,7 @@ main(int argc, char **argv)
     keyboard.layers = (enum layout_id *)&layers;
     keyboard.landscape_layers = (enum layout_id *)&landscape_layers;
     keyboard.schemes = schemes;
+    keyboard.landscape = true;
     keyboard.layer_index = 0;
     keyboard.preferred_scale = 1;
     keyboard.preferred_fractional_scale = 0;
@@ -916,13 +959,13 @@ main(int argc, char **argv)
                 usage(argv[0]);
                 exit(1);
             }
-            height = normal_height = atoi(argv[++i]);
+            normal_height = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "-L")) {
             if (i >= argc - 1) {
                 usage(argv[0]);
                 exit(1);
             }
-            landscape_height = atoi(argv[++i]);
+            height = landscape_height = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "-D")) {
             keyboard.debug = true;
         } else if ((!strcmp(argv[i], "-fn")) || (!strcmp(argv[i], "--fn"))) {
@@ -958,8 +1001,9 @@ main(int argc, char **argv)
         keyboard.schemes[1].high.bgra[3] = alpha;
     }
 
-    if (!fc_font_pattern) {
-        fc_font_pattern = default_font;
+    if (fc_font_pattern) {
+        for (i = 0; i < countof(schemes); i++)
+            schemes[i].font = fc_font_pattern;
     }
 
     display = wl_display_connect(NULL);
@@ -1013,8 +1057,13 @@ main(int argc, char **argv)
     }
     zwp_input_method_v2_add_listener(input_method, &input_method_listener, NULL);
 
-    draw_ctx.font_description =
-        pango_font_description_from_string(fc_font_pattern);
+//    draw_ctx.font_description =
+//        pango_font_description_from_string(fc_font_pattern);
+
+    for (i = 0; i < countof(schemes); i++) {
+        schemes[i].font_description =
+            pango_font_description_from_string(schemes[i].font);
+    }
 
     if (!hidden)
         show();
@@ -1051,6 +1100,12 @@ main(int argc, char **argv)
 
         if (fds[WAYLAND_FD].revents & POLLIN)
             wl_display_dispatch(display);
+        if (fds[WAYLAND_FD].revents & POLLERR) {
+            die("Exceptional condition on wayland socket.\n");
+        }
+        if (fds[WAYLAND_FD].revents & POLLHUP) {
+            die("Wayland socket has been disconnected.\n");
+        }
 
         if (fds[SIGNAL_FD].revents & POLLIN) {
             struct signalfd_siginfo si;
@@ -1068,8 +1123,10 @@ main(int argc, char **argv)
         }
     }
 
-    if (fc_font_pattern != default_font) {
+    if (fc_font_pattern) {
         free((void *)fc_font_pattern);
+        for (i = 0; i < countof(schemes); i++)
+            schemes[i].font = NULL;
     }
 
     return 0;

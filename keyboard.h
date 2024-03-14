@@ -85,6 +85,8 @@ struct clr_scheme {
 	Color high;
 	Color swipe;
 	Color text;
+	char *font;
+	PangoFontDescription *font_description;
 };
 
 struct key {

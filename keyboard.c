@@ -415,6 +415,8 @@ kbd_press_key(struct kbd *kb, struct key *k, uint32_t time)
                 fprintf(stderr, "pressing composed key\n");
             kb->compose++;
         }
+        // remove all modifiers
+        kb->mods ^= kb->mods;
         break;
     case Mod:
         kb->mods ^= k->code;

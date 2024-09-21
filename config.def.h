@@ -17,7 +17,7 @@ static const int transparency = 255;
 
 struct clr_scheme schemes[] = {
 {
-  /* colors - mods */
+  /* colors - special keys */
   .bg = {.bgra = {0, 0, 0, transparency}},
   .fg = {.bgra = {255, 255, 255, transparency}},
   .high = {.bgra = {75, 75, 75, transparency}},

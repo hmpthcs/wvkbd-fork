@@ -17,21 +17,21 @@ static const int transparency = 255;
 
 struct clr_scheme schemes[] = {
 {
-  /* colors */
-  .bg = {.bgra = {15, 15, 15, transparency}},
-  .fg = {.bgra = {45, 45, 45, transparency}},
-  .high = {.bgra = {100, 100, 100, transparency}},
-  .swipe = {.bgra = {100, 255, 100, 64}},
+  /* colors - mods */
+  .bg = {.bgra = {0, 0, 0, transparency}},
+  .fg = {.bgra = {255, 255, 255, transparency}},
+  .high = {.bgra = {75, 75, 75, transparency}},
+  .swipe = {.bgra = {120, 120, 120, 150}},
   .text = {.color = UINT32_MAX},
   .font = DEFAULT_FONT,
   .rounding = DEFAULT_ROUNDING,
 },
 {
-  /* colors */
-  .bg = {.bgra = {0, 0, 0, transparency}},
-  .fg = {.bgra = {255, 255, 255, transparency}},
+  /* colors - alphas */
+  .bg = {.bgra = {255, 255, 255, transparency}},
+  .fg = {.bgra = {0, 0, 0, transparency}},
   .high = {.bgra = {100, 100, 100, transparency}},
-  .swipe = {.bgra = {150, 150, 150, 64}},
+  .swipe = {.bgra = {50, 50, 50, 150}},
   .text = {.color = UINT32_MAX},
   .font = DEFAULT_FONT,
   .rounding = DEFAULT_ROUNDING,

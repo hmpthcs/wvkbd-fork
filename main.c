@@ -1032,7 +1032,7 @@ main(int argc, char **argv)
     }
 //    if (wm_base == NULL) {
 //        die("wm_base not available\n");
-    }
+//    }
     if (vkbd_mgr == NULL) {
         die("virtual_keyboard_manager not available\n");
     }

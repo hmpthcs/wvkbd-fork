@@ -601,10 +601,10 @@ void drw_draw_text(struct drwsurf *d, Color color, uint32_t x, uint32_t y,
                    uint32_t w, uint32_t h, uint32_t b, const char *label,
                    PangoFontDescription *font_description);
 */
-        drw_draw_text(kb->surf, 
+        drw_draw_text(d, 
                 scheme->text, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, label, 
                 scheme->font_description);
-        wl_surface_damage(kb->surf, k->x, k->y, k->w, k->h);
+        wl_surface_damage(d->surf, k->x, k->y, k->w, k->h);
 }
 
 void

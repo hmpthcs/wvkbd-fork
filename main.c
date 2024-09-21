@@ -484,8 +484,9 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
             wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, 1);
     } /* else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
         wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
-        xdg_wm_base_add_listener(wm_base, &xdg_wm_base_listener, NULL); */
-    } else if (strcmp(interface,
+        xdg_wm_base_add_listener(wm_base, &xdg_wm_base_listener, NULL);
+    }*/
+     else if (strcmp(interface,
                       wp_fractional_scale_manager_v1_interface.name) == 0) {
         wfs_mgr = wl_registry_bind(
             registry, name, &wp_fractional_scale_manager_v1_interface, 1);

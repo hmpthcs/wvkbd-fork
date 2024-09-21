@@ -282,7 +282,7 @@ wl_pointer_leave(void *data, struct wl_pointer *wl_pointer, uint32_t serial,
 void
 wl_pointer_motion(void *data, struct wl_pointer *wl_pointer, uint32_t time,
                   wl_fixed_t surface_x, wl_fixed_t surface_y)
-  {
+{
     /* if(!popup_xdg_surface_configured) {
         return;
     } */
@@ -298,7 +298,7 @@ wl_pointer_motion(void *data, struct wl_pointer *wl_pointer, uint32_t time,
 void
 wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t serial,
                   uint32_t time, uint32_t button, uint32_t state)
-//{
+{
 //    if(!popup_xdg_surface_configured) {
 //        return;
 //    }

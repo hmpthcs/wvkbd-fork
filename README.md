@@ -1,3 +1,18 @@
+# Fork Info
+
+Fork for my own personal needs. Likely mostly just optimizations for pinenote / EPD displays.
+
+## Branch: remove popup
+
+### What:
+Attemp to undo this commit: jjsullivan5196/wvkbd@24e354ce9e56b9e7dfdf9c1d2dc0c121eca72881
+
+### Why:
+Poor appearance on EPD devices
+
+### Reference:
+
+
 # wvkbd - On-screen keyboard for wlroots that sucks less
 
 <img src="https://raw.githubusercontent.com/proycon/wvkbd/master/contrib/wvkbd-mobintl.jpg" width=300 /> <img src="https://raw.githubusercontent.com/proycon/wvkbd/master/contrib/wvkbd-mobintl-cyrillic.jpg" width=300 />

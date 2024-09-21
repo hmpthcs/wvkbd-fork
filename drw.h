@@ -30,8 +30,6 @@ typedef union {
 	uint32_t color;
 } Color;
 
-void drw_do_clear(struct drwsurf *d, uint32_t x, uint32_t y,
-                      uint32_t w, uint32_t h);
 void drw_do_rectangle(struct drwsurf *d, Color color, uint32_t x, uint32_t y,
                       uint32_t w, uint32_t h, bool fill, int rounding);
 void drw_fill_rectangle(struct drwsurf *d, Color color, uint32_t x, uint32_t y,

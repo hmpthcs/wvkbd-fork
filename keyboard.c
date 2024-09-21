@@ -337,9 +337,6 @@ kbd_release_key(struct kbd *kb, uint32_t time)
     }
 
     drwsurf_flip(kb->surf);
-
-    kbd_clear_last_popup(kb);
-    drwsurf_flip(kb->popup_surf);
 }
 
 void
@@ -367,8 +364,6 @@ kbd_motion_key(struct kbd *kb, uint32_t time, uint32_t x, uint32_t y)
 
     drwsurf_flip(kb->surf);
 
-    kbd_clear_last_popup(kb);
-    drwsurf_flip(kb->popup_surf);
 }
 
 void
@@ -502,7 +497,6 @@ kbd_press_key(struct kbd *kb, struct key *k, uint32_t time)
     }
 
     drwsurf_flip(kb->surf);
-    drwsurf_flip(kb->popup_surf);
 }
 
 void
@@ -546,19 +540,6 @@ kbd_print_key_stdout(struct kbd *kb, struct key *k)
 }
 
 void
-kbd_clear_last_popup(struct kbd *kb)
-{
-    if (kb->last_popup_w && kb->last_popup_h) {
-        drw_do_clear(kb->popup_surf, kb->last_popup_x, kb->last_popup_y,
-                     kb->last_popup_w, kb->last_popup_h);
-        wl_surface_damage(kb->popup_surf->surf, kb->last_popup_x,
-                          kb->last_popup_y, kb->last_popup_w, kb->last_popup_h);
-
-        kb->last_popup_w = kb->last_popup_h = 0;
-    }
-}
-
-void
 kbd_draw_key(struct kbd *kb, struct key *k, enum key_draw_type type)
 {
     const char *label = ((kb->mods & Shift)||(kb->mods & CapsLock)) ? k->shift_label : k->label;
@@ -566,24 +547,30 @@ kbd_draw_key(struct kbd *kb, struct key *k, enum key_draw_type type)
         fprintf(stderr, "Draw key +%d+%d %dx%d -> %s\n", k->x, k->y, k->w, k->h,
                 label);
     struct clr_scheme *scheme = &kb->schemes[k->scheme];
-
+struct drwsurf *d = kb->surf;
     switch (type) {
     case None:
     case Unpress:
-        draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
-                   scheme->fg, scheme->rounding);
+//        draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
+//                   scheme->fg, scheme->rounding);
+	    draw_inset(d, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
+                    scheme->fg);
         break;
     case Press:
-        draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
-                   scheme->high, scheme->rounding);
+//        draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
+//                   scheme->high, scheme->rounding);
+        draw_inset(d, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
+                    scheme->high);
         break;
     case Swipe:
-        draw_over_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
-                        scheme->swipe, scheme->rounding);
+//        draw_over_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
+//                        scheme->swipe, scheme->rounding);
+        draw_over_inset(d, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
+                    scheme->swipe);
         break;
     }
 
-    drw_draw_text(kb->surf, scheme->text, k->x, k->y, k->w, k->h,
+/*    drw_draw_text(kb->surf, scheme->text, k->x, k->y, k->w, k->h,
                   KBD_KEY_BORDER, label, scheme->font_description);
     wl_surface_damage(kb->surf->surf, k->x, k->y, k->w, k->h);
 
@@ -606,6 +593,11 @@ kbd_draw_key(struct kbd *kb, struct key *k, enum key_draw_type type)
                           k->h);
     }
 }
+*/
+        drw_draw_text(d, 
+                scheme->text, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, label);
+        wl_surface_damage(d->surf, k->x, k->y, k->w, k->h);
+}
 
 void
 kbd_draw_layout(struct kbd *kb)
@@ -626,7 +618,8 @@ kbd_draw_layout(struct kbd *kb)
             (next_key->type == Compose && kb->compose)) {
             kbd_draw_key(kb, next_key, Press);
         } else {
-            kbd_draw_key(kb, next_key, None);
+//            kbd_draw_key(kb, next_key, None);
+            kbd_draw_key(kb, next_key, Unpress);
         }
         next_key++;
     }
@@ -636,11 +629,13 @@ kbd_draw_layout(struct kbd *kb)
 void
 kbd_resize(struct kbd *kb, struct layout *layouts, uint8_t layoutcount)
 {
+    struct drwsurf *d = kb->surf;
     fprintf(stderr, "Resize %dx%d %f, %d layouts\n", kb->w, kb->h, kb->scale,
             layoutcount);
 
-    drwsurf_resize(kb->surf, kb->w, kb->h, kb->scale);
-    drwsurf_resize(kb->popup_surf, kb->w, kb->h * 2, kb->scale);
+    //drwsurf_resize(kb->surf, kb->w, kb->h, kb->scale);
+    //drwsurf_resize(kb->popup_surf, kb->w, kb->h * 2, kb->scale);
+    drwsurf_resize(d, kb->w, kb->h, kb->scale);
     for (int i = 0; i < layoutcount; i++) {
         if (kb->debug) {
             if (layouts[i].name)

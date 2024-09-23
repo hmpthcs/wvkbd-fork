@@ -547,25 +547,25 @@ kbd_draw_key(struct kbd *kb, struct key *k, enum key_draw_type type)
         fprintf(stderr, "Draw key +%d+%d %dx%d -> %s\n", k->x, k->y, k->w, k->h,
                 label);
     struct clr_scheme *scheme = &kb->schemes[k->scheme];
-struct drwsurf *d = kb->surf;
+    struct drwsurf *d = kb->surf;
     switch (type) {
-//    case None:
+    case None:
     case Unpress:
 //        draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
 //                   scheme->fg, scheme->rounding);
-	    draw_inset(d, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
+	    draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
                     scheme->fg, scheme->rounding);
         break;
     case Press:
 //        draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
 //                   scheme->high, scheme->rounding);
-        draw_inset(d, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
+        draw_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
                     scheme->high, scheme->rounding);
         break;
     case Swipe:
 //        draw_over_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER,
 //                        scheme->swipe, scheme->rounding);
-        draw_over_inset(d, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
+        draw_over_inset(kb->surf, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, 
                     scheme->swipe, scheme->rounding);
         break;
     }
@@ -601,7 +601,7 @@ void drw_draw_text(struct drwsurf *d, Color color, uint32_t x, uint32_t y,
                    uint32_t w, uint32_t h, uint32_t b, const char *label,
                    PangoFontDescription *font_description);
 */
-        drw_draw_text(d, 
+        drw_draw_text(kb->surf,
                 scheme->text, k->x, k->y, k->w, k->h, KBD_KEY_BORDER, label, 
                 scheme->font_description);
         wl_surface_damage(d->surf, k->x, k->y, k->w, k->h);

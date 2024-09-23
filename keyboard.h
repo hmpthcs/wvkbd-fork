@@ -42,9 +42,9 @@ enum key_modifier_type {
 };
 
 enum key_draw_type {
-//	None = 0,
+	None = 0,
 //	Unpress,
-	Unpress = 0,
+	Unpress,
 	Press,
 	Swipe,
 };

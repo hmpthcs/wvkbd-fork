@@ -29,8 +29,8 @@ struct clr_scheme schemes[] = {
 {
   /* colors - alphas */
   .bg = {.bgra = {255, 255, 255, transparency}},
-  .fg = {.bgra = {0, 0, 0, transparency}},
-  .high = {.bgra = {100, 100, 100, transparency}},
+  .fg = {.bgra = {1, 1, 1, transparency}},
+  .high = {.bgra = {75, 75, 75, transparency}},
   .swipe = {.bgra = {50, 50, 50, 150}},
   .text = {.color = UINT32_MAX},
   .font = DEFAULT_FONT,

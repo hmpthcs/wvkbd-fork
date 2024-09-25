@@ -1,7 +1,7 @@
 # Maintainer: Manape <hmpthcs@protonmail.com>
 # Modified from Aren's AUR PKGBUILD for wvkbd
 
-pkgname=wvkbd-fork
+pkgname=wvkbd
 conflicts=('wvkbd')
 provides=('wvkbd')
 pkgver=0.r216.g56e72c7

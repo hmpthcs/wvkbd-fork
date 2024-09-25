@@ -2,7 +2,7 @@
 #define config_def_h_INCLUDED
 
 #define DEFAULT_FONT "Bitter 14"
-#define DEFAULT_ROUNDING 3
+#define DEFAULT_ROUNDING 2
 static const int transparency = 255;
 
 /* wvkbd-mobintl --fg ffffffff --fg-sp ccccccff \ 
@@ -16,23 +16,33 @@ static const int transparency = 255;
 */
 
 struct clr_scheme schemes[] = {
+
+
 {
-  /* colors - special keys */
-  .bg = {.bgra = {0, 0, 0, transparency}},
-  .fg = {.bgra = {255, 255, 255, transparency}},
-  .high = {.bgra = {75, 75, 75, transparency}},
-  .swipe = {.bgra = {120, 120, 120, 150}},
-  .text = {.color = UINT32_MAX},
+  /* colors - regular keys */
+ .bg = {.bgra = {0, 0, 0, 255}},
+//  .bg = {.bgra = {255, 255, 255, transparency}}, this is all borders
+  .fg = {.bgra = {255, 255, 255, 255}},
+  .high = {.bgra = {0, 0, 0, 255}},
+  .swipe = {.bgra = {0, 0, 0, 0}},
+ // .text = {.color = {.bgra = {0, 0, 0, transparency}}},
+  .text = {.bgra = {0, 0, 0, 255}},
+  // {.color = UINT32_MAX},
   .font = DEFAULT_FONT,
   .rounding = DEFAULT_ROUNDING,
 },
 {
-  /* colors - alphas */
-  .bg = {.bgra = {255, 255, 255, transparency}},
-  .fg = {.bgra = {1, 1, 1, transparency}},
-  .high = {.bgra = {75, 75, 75, transparency}},
-  .swipe = {.bgra = {50, 50, 50, 150}},
-  .text = {.color = UINT32_MAX},
+  /* colors - special keys */
+//  .bg = {.bgra = {255, 255, 255, 0}},
+  .bg = {.bgra = {0, 0, 0, 0}},
+//  .bg = {.bgra = {70, 70, 70, transparency}},  
+//  .bg = {.bgra = {80, 80, 80, transparency}},
+  .fg = {.bgra = {68, 68, 68, 255}},
+//  .high = {.bgra = {0, 0, 0, transparency}},
+  .high = {.bgra = {255, 255, 255, 255}},
+  .swipe = {.bgra = {0, 0, 0, 0}},
+  .text = {.bgra = {255, 255, 255, 255}},
+//  .text = {.color = UINT32_MAX},
   .font = DEFAULT_FONT,
   .rounding = DEFAULT_ROUNDING,
 }

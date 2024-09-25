@@ -4,7 +4,7 @@
 pkgname=wvkbd
 conflicts=('wvkbd')
 provides=('wvkbd')
-pkgver=0.r216.g56e72c7
+pkgver=0.r216.g28293b0
 pkgrel=1
 pkgdesc='On-screen keyboard for wlroots - hmptchs fork'
 url='https://github.com/hmpthcs/wvkbd-fork'
@@ -16,7 +16,7 @@ source=('wvkbd-fork::git+https://github.com/hmpthcs/wvkbd-fork#branch=remove-pop
 sha512sums=('SKIP')
 
 pkgver() {
-	cd "$pkgname"
+	cd "$pkgname"-fork
 #	git checkout remove-popup
 	printf '0.r%s.g%s' \
 		"$(git rev-list --count master)" \
@@ -24,12 +24,12 @@ pkgver() {
 }
 
 build() {
-	cd "$pkgname"
+	cd "$pkgname"-fork
 #	git checkout remove-popup
 	make
 }
 
 package() {
-	cd "$pkgname"
+	cd "$pkgname"-fork
 	make PREFIX=/usr DESTDIR="$pkgdir" install
 }

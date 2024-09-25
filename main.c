@@ -3,6 +3,7 @@
 #include "proto/xdg-shell-client-protocol.h"
 #include "proto/fractional-scale-v1-client-protocol.h"
 #include "proto/viewporter-client-protocol.h"
+#include "proto/input-method-unstable-v2-client-protocol.h"
 #include <errno.h>
 #include <linux/input-event-codes.h>
 #include <stdio.h>
@@ -42,6 +43,8 @@ static struct xdg_surface *popup_xdg_surface;
 static struct xdg_popup *popup_xdg_popup;
 static struct xdg_positioner *popup_xdg_positioner;
 static struct zwp_virtual_keyboard_manager_v1 *vkbd_mgr;
+static struct zwp_input_method_manager_v2 *input_method_manager;
+static struct zwp_input_method_v2 *input_method;
 static struct wp_fractional_scale_v1 *wfs_draw_surf;
 static struct wp_fractional_scale_manager_v1 *wfs_mgr;
 static struct wp_viewport *draw_surf_viewport, *popup_draw_surf_viewport;
@@ -133,6 +136,26 @@ static void layer_surface_closed(void *data,
                                  struct zwlr_layer_surface_v1 *surface);
 static void flip_landscape();
 
+
+static void input_method_unavailable(void *data, struct zwp_input_method_v2 *zwp_input_method){}
+
+static void input_method_done(void *data, struct zwp_input_method_v2 *zwp_input_method){}
+
+static void input_method_content_type(void *data, struct zwp_input_method_v2 *zwp_input_method,
+                                      uint32_t hint, uint32_t purpose){
+    // TODO: save current layout
+    fprintf(stderr, "content type request. hint: %i, purpose: %i\n", hint, purpose);
+}
+
+static void input_method_text_change_cause(void *data, struct zwp_input_method_v2 *zwp_input_method,
+                                           uint32_t cause){}
+
+static void input_method_surrounding_text(void *data, struct zwp_input_method_v2 *zwp_input_method,
+                                          const char *text, uint32_t cursor, uint32_t anchor){}
+
+static void input_method_activate(void *data, struct zwp_input_method_v2 *zwp_input_method);
+static void input_method_deactivate(void *data, struct zwp_input_method_v2 *zwp_input_method);
+
 /* event handlers */
 static const struct wl_pointer_listener pointer_listener = {
     .enter = wl_pointer_enter,
@@ -170,6 +193,16 @@ static const struct wl_registry_listener registry_listener = {
 static const struct zwlr_layer_surface_v1_listener layer_surface_listener = {
     .configure = layer_surface_configure,
     .closed = layer_surface_closed,
+};
+
+static const struct zwp_input_method_v2_listener input_method_listener = {
+    .activate = input_method_activate,
+    .deactivate = input_method_deactivate,
+    .surrounding_text = input_method_surrounding_text,
+    .text_change_cause = input_method_text_change_cause,
+    .content_type = input_method_content_type,
+    .done = input_method_done,
+    .unavailable = input_method_unavailable
 };
 
 /* configuration, allows nested code to access above variables */
@@ -492,6 +525,9 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
                       zwp_virtual_keyboard_manager_v1_interface.name) == 0) {
         vkbd_mgr = wl_registry_bind(
             registry, name, &zwp_virtual_keyboard_manager_v1_interface, 1);
+    } else if (strcmp(interface, zwp_input_method_manager_v2_interface.name) == 0) {
+        input_method_manager =
+            wl_registry_bind(registry, name, &zwp_input_method_manager_v2_interface, 1);
     }
 }
 
@@ -778,6 +814,15 @@ show()
     wl_surface_commit(draw_surf.surf);
 }
 
+static void input_method_activate(void *data, struct zwp_input_method_v2 *zwp_input_method){
+    show();
+}
+
+static void input_method_deactivate(void *data, struct zwp_input_method_v2 *zwp_input_method){
+    // TODO: restore previous layout
+    hide();
+}
+
 void
 toggle_visibility()
 {
@@ -1030,6 +1075,9 @@ main(int argc, char **argv)
     if (vkbd_mgr == NULL) {
         die("virtual_keyboard_manager not available\n");
     }
+    if (input_method_manager == NULL) {
+        die("input_method_manager is not available\n");
+    }
 
     empty_region = wl_compositor_create_region(compositor);
     popup_xdg_positioner = xdg_wm_base_create_positioner(wm_base);
@@ -1042,6 +1090,15 @@ main(int argc, char **argv)
 
     kbd_init(&keyboard, (struct layout *)&layouts, layer_names_list,
              landscape_layer_names_list);
+
+    input_method = zwp_input_method_manager_v2_get_input_method(input_method_manager, seat);
+    if (input_method == NULL) {
+        fprintf(stderr, "input_method is NULL, that's not good\n");
+    }
+    zwp_input_method_v2_add_listener(input_method, &input_method_listener, NULL);
+
+//    draw_ctx.font_description =
+//        pango_font_description_from_string(fc_font_pattern);
 
     for (i = 0; i < countof(schemes); i++) {
         schemes[i].font_description =

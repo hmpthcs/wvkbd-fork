@@ -48,6 +48,37 @@ enum key_draw_type {
 	Swipe,
 };
 
+enum text_purpose {
+    Normal = 0, // default input, allowing all characters
+    Alpha, // allow only alphabetic characters
+    Digits, // allow only digits
+    Number, // input a number (including decial separator and sign)
+    Phone, // input a phone number
+    Url, // input a URL
+    Email, // input an email address
+    Name, // input a name of a person
+    Password, // input a password (combined with CONTENT_HINT::SENSITIVE)
+    Pin, // input a numeric password (combined with CONTENT_HINT::SENSITIVE)
+    Date, // input a date
+    Time, // input a time
+    Datetime, // input a date and a time
+    Terminal // input for a terminal
+};
+
+enum content_hint {
+    Regular = 0x0, // no special behavior
+    Completion = 0x1, // suggest word completion
+    Spellcheck = 0x2, // sugest word corrections
+    Auto_Capitalization = 0x4, // switch to uppercase letters at the start of the sentence
+    Lowercase = 0x8, // prefer lowercase letters
+    Uppercase = 0x10, // prefer upper case letters
+    Titlecase = 0x20, // prefer casing for titles and headings (can be language dependent)
+    Hidden_Text = 0x40, // characters should be hidden
+    Sensitive_Data = 0x80, // typed text should not be stored
+    Latin = 0x100, // just latin characters should be entered
+    Multiline = 0x200 // the text input is multiline
+};
+
 struct clr_scheme {
 	Color fg;
 	Color bg;
